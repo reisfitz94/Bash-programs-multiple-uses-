@@ -17,9 +17,10 @@ A robust, production-grade tool for identifying high-growth stock opportunities 
 
 ## Usage
 ```bash
-cd scripts/
 ./stock-trend-analyzer.sh --symbols AAPL,MSFT,GOOG --days 180 --min_gain 2.0
 ```
+
+Canonical entrypoint is the repository-root script. `scripts/stock-trend-analyzer.sh` remains supported for compatibility.
 - `--symbols` (required): Comma-separated list of stock symbols
 - `--days` (optional): Lookback period in days (default: 180)
 - `--min_gain` (optional): Minimum gain threshold (default: 2.0 = doubled)

@@ -16,13 +16,14 @@ Automated pipelines and professional scripts for IT, security, and data science 
 
 ### Usage
 ```bash
-cd scripts/
 # Basic usage (analyze Apple, Microsoft, Google for 180 days, min gain 2x):
 ./stock-trend-analyzer.sh --symbols AAPL,MSFT,GOOG --days 180 --min_gain 2.0
 
 # Show help:
 ./stock-trend-analyzer.sh --help
 ```
+
+Canonical entrypoint is the repository-root script. The `scripts/stock-trend-analyzer.sh` path remains supported for compatibility.
 
 ### What it does
 - Orchestrates a robust Python analytics engine from Bash
