@@ -64,6 +64,7 @@ run_blast() {
     log "[BLAST] Complete. Results in $out"
 }
 
+format_fastq() {
     log "[FastQ] Format/validate a FastQ file (streaming for large files)"
     read -rp "Enter input FastQ file (or '-' for stdin): " inq
     read -rp "Enter output file: " outq

@@ -63,25 +63,24 @@ fi
 
 run_curl() {
     local i="$1"
-    local extra=""
-    if [[ "$METHOD" != "GET" ]]; then
-        extra="-X $METHOD"
-    fi
+    local start end ms http_code
+    local -a curl_args
+    curl_args=(-s -o /dev/null -w "%{http_code}" -X "$METHOD")
     if [[ -n "$BODY_FILE" ]]; then
         if [[ "$BODY_FILE" == "-" ]]; then
-            extra="$extra --data-binary @-"
+            curl_args+=(--data-binary @-)
             start=$(date +%s%3N)
-            http_code=$(cat | curl -s -o /dev/null -w "%{http_code}" $extra "$URL")
+            http_code=$(cat | curl "${curl_args[@]}" "$URL")
             end=$(date +%s%3N)
         else
-            extra="$extra --data-binary @$BODY_FILE"
+            curl_args+=(--data-binary "@$BODY_FILE")
             start=$(date +%s%3N)
-            http_code=$(curl -s -o /dev/null -w "%{http_code}" $extra "$URL")
+            http_code=$(curl "${curl_args[@]}" "$URL")
             end=$(date +%s%3N)
         fi
     else
         start=$(date +%s%3N)
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" $extra "$URL")
+        http_code=$(curl "${curl_args[@]}" "$URL")
         end=$(date +%s%3N)
     fi
     ms=$((end - start))

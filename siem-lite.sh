@@ -1,5 +1,6 @@
 #!/bin/bash
 ################################################################################
+# cspell:ignore SIEM siem Unban unban
 # SIEM-Lite: Real-Time Security Log Monitor & Auto-Ban Tool
 #
 # Monitors /var/log/auth.log for brute-force SSH attacks and unauthorized sudo

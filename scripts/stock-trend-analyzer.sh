@@ -6,7 +6,7 @@ IFS=$'\n\t'
 umask 077
 
 # Trap signals for cleanup
-TMP_RESULTS="/tmp/stock_trend_results_$$.csv"
+TMP_RESULTS="$(mktemp "${TMPDIR:-/tmp}/stock_trend_results.XXXXXX.csv")"
 cleanup() { [[ -f "$TMP_RESULTS" ]] && rm -f "$TMP_RESULTS"; }
 trap cleanup EXIT INT TERM
 

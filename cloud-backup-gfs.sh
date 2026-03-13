@@ -91,8 +91,10 @@ create_backup() {
     now=$(date +%Y%m%d-%H%M%S)
     local day_of_week=$(date +%u)
     local day_of_month=$(date +%d)
-    local prefix=$(basename "$src")
-    local backup_dir="$BACKUP_ROOT/$prefix"
+    local prefix
+    prefix=$(basename "$src")
+    local backup_dir
+    backup_dir="$BACKUP_ROOT/$prefix"
     mkdir -p "$backup_dir"
     local type="son"
     if [[ "$day_of_month" == "01" ]]; then
@@ -100,7 +102,8 @@ create_backup() {
     elif [[ "$day_of_week" == "7" ]]; then
         type="father"
     fi
-    local backup_file="$backup_dir/${prefix}-${type}-${now}.tar.gz"
+    local backup_file
+    backup_file="$backup_dir/${prefix}-${type}-${now}.tar.gz"
     log "Creating $type backup: $backup_file"
     if [[ "$src" == "-" ]]; then
         log "Reading tar input from stdin (streaming)"
@@ -125,6 +128,7 @@ sync_backup() {
             aws s3 cp "$file" "$dest" --storage-class STANDARD_IA
             ;;
         gcs)
+            # cspell:disable-next-line
             gsutil cp "$file" "$dest"
             ;;
         rsync)
@@ -146,6 +150,8 @@ verify_backup() {
     log "Verifying backup integrity..."
     $ENCRYPT_CMD -d -pass pass:"$passphrase" -in "$file" -out "$tmpdir/restore.tar.gz"
     tar tzf "$tmpdir/restore.tar.gz" > "$tmpdir/list.txt"
+    local random_file
+    # cspell:disable-next-line
     local random_file
     random_file=$(shuf -n1 "$tmpdir/list.txt")
     tar xzf "$tmpdir/restore.tar.gz" -C "$tmpdir" "$random_file"

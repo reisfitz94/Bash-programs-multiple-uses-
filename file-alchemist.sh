@@ -26,7 +26,7 @@ log() {
 }
 
 usage() {
-        cat <<EOF
+    cat <<EOF
 File Alchemist: Universal Format Converter
 
 Usage: $0 -s SRC -t TO_FORMAT [-d DEST] [-b] [-v] [--map MAP] [--filter FILTER]
@@ -56,7 +56,6 @@ Examples:
 EOF
 }
 
-done
 MAP=""
 FILTER=""
 INTERACTIVE=0
@@ -74,6 +73,7 @@ while [[ $# -gt 0 ]]; do
         --help) usage; exit 0 ;;
         *) echo "Unknown option: $1"; usage; exit 1 ;;
     esac
+done
 
 
 if (( INTERACTIVE )); then

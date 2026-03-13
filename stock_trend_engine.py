@@ -24,12 +24,6 @@ This Python engine can be adapted for:
 
 import sys
 import argparse
-import pandas as pd
-import numpy as np
-import yfinance as yf
-from ta.momentum import RSIIndicator
-from ta.volatility import AverageTrueRange, BollingerBands
-from ta.trend import SMAIndicator, EMAIndicator
 
 def calculate_indicators(df):
     """
@@ -57,6 +51,20 @@ parser.add_argument('-s', '--symbols', required=True, help='Comma-separated stoc
 parser.add_argument('-d', '--days', type=int, default=180, help='Lookback period (days)')
 parser.add_argument('-g', '--min_gain', type=float, default=2.0, help='Min gain (2.0=doubled)')
 args = parser.parse_args()
+
+try:
+    import pandas as pd
+    import numpy as np
+    import yfinance as yf
+    from ta.momentum import RSIIndicator
+    from ta.volatility import AverageTrueRange, BollingerBands
+    from ta.trend import SMAIndicator
+except ImportError as e:
+    print(
+        "MISSING_DEPENDENCY," + str(e) + ",install with: pip install pandas numpy yfinance ta",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 symbols = [s.strip().upper() for s in args.symbols.split(',')]
 results = []
