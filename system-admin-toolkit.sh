@@ -28,6 +28,8 @@ ALERT_EMAIL="admin@example.com"  # Configure this with your email
 DISK_WARNING_THRESHOLD=80  # Alert when disk usage exceeds this percentage
 SERVICE_CHECK_INTERVAL=300  # Check services every 5 minutes (in seconds)
 
+: "$SCRIPT_DIR" "$SERVICE_CHECK_INTERVAL"
+
 # Color codes for terminal output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -48,28 +50,32 @@ log_message() {
     local level=$1
     shift
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
     echo -e "${BLUE}[$level]${NC} $message"
 }
 
 log_success() {
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [SUCCESS] $message" >> "$LOG_FILE"
     echo -e "${GREEN}[SUCCESS]${NC} $message"
 }
 
 log_error() {
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [ERROR] $message" >> "$LOG_FILE"
     echo -e "${RED}[ERROR]${NC} $message"
 }
 
 log_warning() {
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] [WARNING] $message" >> "$LOG_FILE"
     echo -e "${YELLOW}[WARNING]${NC} $message"
 }
@@ -256,7 +262,7 @@ list_users() {
     log_message "INFO" "System user accounts:"
     echo "-----------------------------------"
     awk -F: '$3 >= 1000 {print $1 "\t" $5 "\t" $6}' /etc/passwd | \
-        while IFS=$'\t' read -r user fullname home; do
+        while IFS=$'\t' read -r user fullname _home; do
             groups=$(id -Gn "$user" 2>/dev/null || echo "N/A")
             printf "%-15s | %-30s | Groups: %s\n" "$user" "$fullname" "$groups"
         done
@@ -363,7 +369,8 @@ check_failed_services() {
 
 # Perform system backup
 backup_system() {
-    local backup_name="system-backup-$(date +%Y%m%d_%H%M%S).tar.gz"
+    local backup_name
+    backup_name="system-backup-$(date +%Y%m%d_%H%M%S).tar.gz"
     local backup_path="$BACKUP_DIR/$backup_name"
     
     log_message "INFO" "Starting system backup..."

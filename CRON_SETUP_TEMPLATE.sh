@@ -28,6 +28,8 @@ SCRIPT_PATH="/usr/local/bin/system-admin-toolkit.sh"
 # Logging
 LOG_FILE="/var/log/sysadmin-toolkit/cron-execution.log"
 
+: "$SCRIPT_PATH" "$LOG_FILE"
+
 # ============================================================================
 # CRON JOB TEMPLATES
 # ============================================================================

@@ -103,7 +103,7 @@ parse_log_line() {
         log_action "SSH fail from $ip (${ssh_failures["$ip"]} attempts)"
         if (( ssh_failures["$ip"] >= SSH_FAIL_THRESHOLD )); then
             ban_ip "$ip" "SSH brute-force (${ssh_failures["$ip"]} fails)"
-            unset ssh_failures["$ip"]
+            unset 'ssh_failures[$ip]'
         fi
     fi
     # Unauthorized sudo detection
@@ -114,7 +114,7 @@ parse_log_line() {
         log_action "SUDO fail from $ip (${sudo_failures["$ip"]} attempts)"
         if (( sudo_failures["$ip"] >= SUDO_FAIL_THRESHOLD )); then
             ban_ip "$ip" "Unauthorized sudo (${sudo_failures["$ip"]} fails)"
-            unset sudo_failures["$ip"]
+            unset 'sudo_failures[$ip]'
         fi
     fi
     # Sudo: more generic detection (no IP, fallback to user)

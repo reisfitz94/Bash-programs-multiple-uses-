@@ -28,11 +28,11 @@ run_linter() {
         shellcheck)
             find . -type f -name "*.sh" -exec shellcheck {} + || failures=1 ;;
         yamllint)
-            find . -type f -name "*.yml" -o -name "*.yaml" | xargs -r yamllint || failures=1 ;;
+            find . -type f \( -name "*.yml" -o -name "*.yaml" \) -print0 | xargs -0 -r yamllint || failures=1 ;;
         flake8)
-            find . -type f -name "*.py" | xargs -r flake8 || failures=1 ;;
+            find . -type f -name "*.py" -print0 | xargs -0 -r flake8 || failures=1 ;;
         bandit)
-            find . -type f -name "*.py" | xargs -r bandit -r -ll || failures=1 ;;
+            find . -type f -name "*.py" -print0 | xargs -0 -r bandit -r -ll || failures=1 ;;
         *)
             "$linter" . || failures=1 ;;
     esac

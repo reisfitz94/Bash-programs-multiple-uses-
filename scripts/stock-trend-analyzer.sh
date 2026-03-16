@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # Strict mode: safer Bash
 set -euo pipefail
@@ -46,7 +45,10 @@ fi
 
 log() {
 		local msg="$1"
-		echo "[$(date +'%Y-%m-%d %H:%M:%S')] $msg" | tee -a "$LOG_FILE" >&2
+		if (( VERBOSE )); then
+			echo "[$(date +'%Y-%m-%d %H:%M:%S')] $msg" >&2
+		fi
+		echo "[$(date +'%Y-%m-%d %H:%M:%S')] $msg" >> "$LOG_FILE"
 }
 
 log "Starting stock analysis for: $SYMBOLS"

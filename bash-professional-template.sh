@@ -16,7 +16,9 @@ log() {
     local msg="$1"
     local ts
     ts=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$ts] $msg"
+    if (( VERBOSE )); then
+        echo "[$ts] $msg"
+    fi
     echo "[$ts] $msg" >> "$LOG_FILE"
 }
 
@@ -43,6 +45,11 @@ while getopts ":vf:-:" opt; do
     esac
 done
 
+: "${FILE:=}"
+
 log "Script started."
+if [[ -n "$FILE" ]]; then
+    log "Input file: $FILE"
+fi
 # ...main logic here...
 log "Script finished."

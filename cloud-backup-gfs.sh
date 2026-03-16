@@ -1,4 +1,3 @@
-
 #!/bin/bash
 ################################################################################
 # Cloud-Agnostic Encrypted Backup Engine with GFS Rotation (Professional Grade)
@@ -19,7 +18,9 @@ log() {
     local msg="$1"
     local ts
     ts=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$ts] $msg"
+    if (( VERBOSE )); then
+        echo "[$ts] $msg"
+    fi
     echo "[$ts] $msg" >> "$LOG_FILE"
 }
 
@@ -80,14 +81,12 @@ BACKUP_ROOT="/var/backups/cloud-gfs"
 RETENTION_SONS=7      # Daily backups to keep
 RETENTION_FATHERS=4   # Weekly backups to keep
 RETENTION_GRAND=12    # Monthly backups to keep
-ENCRYPT_CMD="openssl enc -aes-256-cbc -pbkdf2"
 COMPRESS_CMD="tar czf"
 
 # ===================== UTILITY FUNCTIONS =====================
 
 
 # ===================== GFS ROTATION =====================
-# Write a Bash function for a GFS rotation logic using timestamps
 rotate_gfs() {
     local backup_dir="$1"
     local prefix="$2"
@@ -114,8 +113,10 @@ create_backup() {
     local src="$1"
     local now
     now=$(date +%Y%m%d-%H%M%S)
-    local day_of_week=$(date +%u)
-    local day_of_month=$(date +%d)
+    local day_of_week
+    local day_of_month
+    day_of_week=$(date +%u)
+    day_of_month=$(date +%d)
     local prefix
     prefix=$(basename "$src")
     local backup_dir

@@ -24,6 +24,7 @@ This Python engine can be adapted for:
 
 import sys
 import argparse
+import csv
 
 def calculate_indicators(df):
     """
@@ -53,7 +54,6 @@ parser.add_argument('-g', '--min_gain', type=float, default=2.0, help='Min gain 
 args = parser.parse_args()
 
 try:
-    import pandas as pd
     import numpy as np
     import yfinance as yf
     from ta.momentum import RSIIndicator
@@ -86,8 +86,10 @@ for symbol in symbols:
         df['Volume_MA10'] = df['Volume'].rolling(10).mean()
         # Golden/Death Cross
         cross = 'none'
-        if df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1]: cross = 'golden'
-        if df['SMA50'].iloc[-1] < df['SMA200'].iloc[-1]: cross = 'death'
+        if df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1]:
+            cross = 'golden'
+        if df['SMA50'].iloc[-1] < df['SMA200'].iloc[-1]:
+            cross = 'death'
         # Gain
         gain = df['Close'].iloc[-1] / df['Close'].iloc[0]
         # RSI
@@ -131,7 +133,6 @@ for symbol in symbols:
         print(f"{symbol},ERROR,{e}", file=sys.stderr)
 
 # Output CSV
-import csv
 writer = csv.DictWriter(sys.stdout, fieldnames=[
     'Symbol','Start','End','Gain','Cross','RSI','ATR','LastVol','AvgVol','MaxDraw','Sharpe','Action'])
 writer.writeheader()

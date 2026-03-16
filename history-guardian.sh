@@ -20,7 +20,9 @@ log() {
     local msg="$1"
     local ts
     ts=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$ts] $msg"
+    if (( VERBOSE )); then
+        echo "[$ts] $msg"
+    fi
     echo "[$ts] $msg" >> "$LOG_FILE"
 }
 
@@ -70,7 +72,8 @@ check_chrome() {
 }
 
 check_firefox() {
-    local histdb=$(find "$HOME/.mozilla/firefox" -name "places.sqlite" | head -n1)
+    local histdb
+    histdb=$(find "$HOME/.mozilla/firefox" -name "places.sqlite" | head -n1)
     [[ -f "$histdb" ]] || { log "Firefox history DB not found."; return; }
     for kw in "${KEYWORDS[@]}"; do
         if sqlite3 "$histdb" "SELECT url FROM moz_places WHERE url LIKE '%$kw%' LIMIT 1;" | grep -q .; then

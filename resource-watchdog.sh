@@ -36,7 +36,7 @@ get_pid() {
 get_stats() {
     local pid="$1"
     # CPU and MEM from ps
-    read -r cpu mem <<< $(ps -p "$pid" -o %cpu,%mem --no-headers | awk '{print $1, $2}')
+    read -r cpu mem <<< "$(ps -p "$pid" -o %cpu,%mem --no-headers | awk '{print $1, $2}')"
     # Disk I/O from /proc
     local io_prev io_curr delta_io
     io_prev=$(awk '/^read_bytes|^write_bytes/ {sum+=$2} END{print sum}' /proc/$pid/io 2>/dev/null || echo 0)
@@ -61,7 +61,7 @@ main() {
             sleep "$INTERVAL"
             continue
         fi
-        read -r cpu mem io <<< $(get_stats "$pid")
+        read -r cpu mem io <<< "$(get_stats "$pid")"
         cpu_int=${cpu%.*}
         mem_int=${mem%.*}
         if (( cpu_int > CPU_THRESHOLD )); then

@@ -21,7 +21,9 @@ log() {
     local msg="$1"
     local ts
     ts=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$ts] $msg"
+    if (( VERBOSE )); then
+        echo "[$ts] $msg"
+    fi
     echo "[$ts] $msg" >> "$LOG_FILE"
 }
 
