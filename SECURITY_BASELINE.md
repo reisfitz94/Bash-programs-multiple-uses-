@@ -49,4 +49,3 @@ This report summarizes the latest hardening work applied across Bash and Python 
 - Add CI job for shell syntax and static checks (`bash -n` + `shellcheck`) and Python compile checks.
 - Add signed artifact checks for downloaded installers where practical.
 - Add a small `SECURITY.md` policy for vulnerability reporting and support boundaries.
-
