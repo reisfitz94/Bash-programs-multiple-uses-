@@ -112,7 +112,6 @@ prune_backups() {
 # ===================== BACKUP CREATION =====================
 create_backup() {
     local src="$1"
-    local passphrase="$2"
     local now
     now=$(date +%Y%m%d-%H%M%S)
     local day_of_week=$(date +%u)
@@ -170,7 +169,6 @@ sync_backup() {
 # ===================== INTEGRITY CHECK =====================
 verify_backup() {
     local file="$1"
-    local passphrase="$2"
     local tmpdir
     tmpdir=$(mktemp -d)
     trap 'rm -rf -- "$tmpdir"' RETURN
@@ -189,7 +187,8 @@ verify_backup() {
 }
 
 # ===================== MAIN =====================
-BACKUP_FILE=$(create_backup "$SRC" "$PASSPHRASE")
+BACKUP_FILE=$(create_backup "$SRC")
 sync_backup "$BACKUP_FILE" "$METHOD" "$DEST"
-verify_backup "$BACKUP_FILE" "$PASSPHRASE"
+verify_backup "$BACKUP_FILE"
+unset BACKUP_PASSPHRASE PASSPHRASE
 log "Backup completed and verified."

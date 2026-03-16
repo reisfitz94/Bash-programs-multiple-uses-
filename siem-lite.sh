@@ -18,6 +18,7 @@
 ################################################################################
 
 set -euo pipefail
+umask 077
 
 # ===================== CONFIGURATION =====================
 AUTH_LOG="/var/log/auth.log"
@@ -71,7 +72,7 @@ unban_expired() {
     now=$(date +%s)
     if [[ ! -f "$BAN_LIST" ]]; then return; fi
     local tmpfile
-    tmpfile=$(mktemp)
+    tmpfile=$(mktemp "${TMPDIR:-/tmp}/siem-lite.bans.XXXXXX")
     while IFS=, read -r ip ts reason; do
         if (( now - ts > BAN_DURATION )); then
             # Unban
@@ -128,6 +129,7 @@ main() {
     log_action "Starting SIEM-Lite security monitor."
     touch "$BAN_LIST"
     touch "$BAN_LOG"
+    chmod 600 "$BAN_LIST" "$BAN_LOG"
     unban_expired
     tail -F "$AUTH_LOG" | while read -r line; do
         parse_log_line "$line"
