@@ -7,7 +7,7 @@
 # - getopts for flag parsing
 # - log() function with timestamp, console, and /var/log output
 #
-# Usage: ./cloud-backup-gfs.sh -s /path/to/source -m [aws|gcs|rsync] -d DEST -p PASSPHRASE [-v]
+# Usage: ./cloud-backup-gfs.sh -s /path/to/source -m [aws|gcs|rsync] -d DEST [-p PASSPHRASE] [-v]
 ################################################################################
 
 set -euo pipefail
@@ -25,11 +25,11 @@ log() {
 
 usage() {
     cat <<EOF
-Usage: $0 -s SOURCE -m METHOD -d DEST -p PASSPHRASE [-v]
+Usage: $0 -s SOURCE -m METHOD -d DEST [-p PASSPHRASE] [-v]
   -s SOURCE      Directory to back up
   -m METHOD      aws|gcs|rsync
   -d DEST        Destination (bucket or rsync target)
-  -p PASSPHRASE  Encryption passphrase
+    -p PASSPHRASE  Encryption passphrase (or set BACKUP_PASSPHRASE env var)
   -v             Verbose output
   --help         Show this help
 EOF
@@ -55,9 +55,25 @@ while getopts ":s:m:d:p:v-:" opt; do
     esac
 done
 
-if [[ -z "$SRC" || -z "$METHOD" || -z "$DEST" || -z "$PASSPHRASE" ]]; then
+if [[ -z "$SRC" || -z "$METHOD" || -z "$DEST" ]]; then
     usage; exit 1
 fi
+
+if [[ -z "$PASSPHRASE" ]]; then
+    PASSPHRASE="${BACKUP_PASSPHRASE:-}"
+fi
+
+if [[ -z "$PASSPHRASE" ]]; then
+    read -rsp "Enter encryption passphrase: " PASSPHRASE
+    echo
+fi
+
+if [[ -z "$PASSPHRASE" ]]; then
+    log "No encryption passphrase provided."
+    exit 1
+fi
+
+export BACKUP_PASSPHRASE="$PASSPHRASE"
 
 # ===================== CONFIGURATION =====================
 BACKUP_ROOT="/var/backups/cloud-gfs"
@@ -75,12 +91,22 @@ COMPRESS_CMD="tar czf"
 rotate_gfs() {
     local backup_dir="$1"
     local prefix="$2"
-    # Sons: keep last 7 daily
-    find "$backup_dir" -name "${prefix}-son-*.tar.gz.enc" | sort -r | tail -n +$((RETENTION_SONS+1)) | xargs -r rm -f
-    # Fathers: keep last 4 weekly
-    find "$backup_dir" -name "${prefix}-father-*.tar.gz.enc" | sort -r | tail -n +$((RETENTION_FATHERS+1)) | xargs -r rm -f
-    # Grandfathers: keep last 12 monthly
-    find "$backup_dir" -name "${prefix}-grand-*.tar.gz.enc" | sort -r | tail -n +$((RETENTION_GRAND+1)) | xargs -r rm -f
+    prune_backups "$backup_dir" "${prefix}-son-*.tar.gz.enc" "$RETENTION_SONS"
+    prune_backups "$backup_dir" "${prefix}-father-*.tar.gz.enc" "$RETENTION_FATHERS"
+    prune_backups "$backup_dir" "${prefix}-grand-*.tar.gz.enc" "$RETENTION_GRAND"
+}
+
+prune_backups() {
+    local backup_dir="$1"
+    local pattern="$2"
+    local keep="$3"
+    local index=0
+    while IFS= read -r file; do
+        index=$((index + 1))
+        if (( index > keep )); then
+            rm -f -- "$file"
+        fi
+    done < <(find "$backup_dir" -maxdepth 1 -type f -name "$pattern" -print | sort -r)
 }
 
 # ===================== BACKUP CREATION =====================
@@ -107,11 +133,11 @@ create_backup() {
     log "Creating $type backup: $backup_file"
     if [[ "$src" == "-" ]]; then
         log "Reading tar input from stdin (streaming)"
-        cat | $ENCRYPT_CMD -salt -pass pass:"$passphrase" -out "$backup_file.enc"
+        cat | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_PASSPHRASE -out "$backup_file.enc"
     else
         $COMPRESS_CMD "$backup_file" -C "$(dirname "$src")" "$(basename "$src")"
         log "Encrypting backup..."
-        $ENCRYPT_CMD -salt -pass pass:"$passphrase" -in "$backup_file" -out "$backup_file.enc"
+        openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_PASSPHRASE -in "$backup_file" -out "$backup_file.enc"
         rm "$backup_file"
     fi
     rotate_gfs "$backup_dir" "$prefix"
@@ -147,11 +173,10 @@ verify_backup() {
     local passphrase="$2"
     local tmpdir
     tmpdir=$(mktemp -d)
+    trap 'rm -rf -- "$tmpdir"' RETURN
     log "Verifying backup integrity..."
-    $ENCRYPT_CMD -d -pass pass:"$passphrase" -in "$file" -out "$tmpdir/restore.tar.gz"
+    openssl enc -aes-256-cbc -pbkdf2 -d -pass env:BACKUP_PASSPHRASE -in "$file" -out "$tmpdir/restore.tar.gz"
     tar tzf "$tmpdir/restore.tar.gz" > "$tmpdir/list.txt"
-    local random_file
-    # cspell:disable-next-line
     local random_file
     random_file=$(shuf -n1 "$tmpdir/list.txt")
     tar xzf "$tmpdir/restore.tar.gz" -C "$tmpdir" "$random_file"
@@ -161,20 +186,10 @@ verify_backup() {
         log "Integrity check FAILED: $random_file"
         exit 2
     fi
-    rm -rf "$tmpdir"
 }
 
 # ===================== MAIN =====================
-if [[ $# -lt 4 ]]; then
-    echo "Usage: $0 /path/to/source [aws|gcs|rsync] [DESTINATION] [PASSPHRASE]"
-    exit 1
-fi
-SRC="$1"
-METHOD="$2"
-DEST="$3"
-PASSPHRASE="$4"
-
 BACKUP_FILE=$(create_backup "$SRC" "$PASSPHRASE")
 sync_backup "$BACKUP_FILE" "$METHOD" "$DEST"
 verify_backup "$BACKUP_FILE" "$PASSPHRASE"
-    log "Backup completed and verified."
+log "Backup completed and verified."

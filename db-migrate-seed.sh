@@ -22,6 +22,14 @@ DATE=$(date +%Y%m%d-%H%M%S)
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
+mysql_cmd() {
+    MYSQL_PWD="${MYSQL_PWD:-}" mysql -h "$DB_HOST" -u "$DB_USER" "$@"
+}
+
+mysqldump_cmd() {
+    MYSQL_PWD="${MYSQL_PWD:-}" mysqldump -h "$DB_HOST" -u "$DB_USER" "$@"
+}
+
 backup_db() {
     mkdir -p "$BACKUP_DIR"
     case "$DB_TYPE" in
@@ -31,7 +39,7 @@ backup_db() {
             ;;
         mysql)
             log "Backing up MySQL database $DB_NAME..."
-            mysqldump -h "$DB_HOST" -u "$DB_USER" --password="${MYSQL_PWD:-}" "$DB_NAME" > "$BACKUP_DIR/${DB_NAME}_$DATE.sql"
+            mysqldump_cmd "$DB_NAME" > "$BACKUP_DIR/${DB_NAME}_$DATE.sql"
             ;;
         *)
             log "Unknown DB_TYPE: $DB_TYPE"; exit 1
@@ -47,7 +55,7 @@ migrate_db() {
     if [[ "$MIGRATIONS_DIR" == "-" ]]; then
         case "$DB_TYPE" in
             psql) PGPASSWORD="${PGPASSWORD:-}" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" ;;
-            mysql) mysql -h "$DB_HOST" -u "$DB_USER" --password="${MYSQL_PWD:-}" "$DB_NAME" ;;
+            mysql) mysql_cmd "$DB_NAME" ;;
         esac
         log "All migrations applied from stdin."
         return
@@ -63,7 +71,7 @@ migrate_db() {
         log "Applying migration: $f"
         case "$DB_TYPE" in
             psql) PGPASSWORD="${PGPASSWORD:-}" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$f" ;;
-            mysql) mysql -h "$DB_HOST" -u "$DB_USER" --password="${MYSQL_PWD:-}" "$DB_NAME" < "$f" ;;
+            mysql) mysql_cmd "$DB_NAME" < "$f" ;;
         esac
     done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.sql' -print0 | sort -z)
 
@@ -88,9 +96,9 @@ seed_db() {
         mysql)
             if [[ "$SEED_FILE" == "-" ]]; then
                 log "Reading seed from stdin (streaming)"
-                mysql -h "$DB_HOST" -u "$DB_USER" --password="${MYSQL_PWD:-}" "$DB_NAME"
+                mysql_cmd "$DB_NAME"
             else
-                mysql -h "$DB_HOST" -u "$DB_USER" --password="${MYSQL_PWD:-}" "$DB_NAME" < "$SEED_FILE"
+                mysql_cmd "$DB_NAME" < "$SEED_FILE"
             fi
             ;;
         *)
