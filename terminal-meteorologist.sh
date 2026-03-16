@@ -52,12 +52,12 @@ if [[ -z "$LAT" || -z "$LON" ]]; then
 fi
 
 get_gridpoint_url() {
-    curl -s "https://api.weather.gov/points/$LAT,$LON" | jq -r '.properties.forecastHourly'
+    curl -fsS --retry 3 --max-time 15 "https://api.weather.gov/points/$LAT,$LON" | jq -r '.properties.forecastHourly'
 }
 
 fetch_temps() {
     local url="$1"
-    curl -s "$url" | jq -r '.properties.periods[:24][] | [.startTime, .temperature] | @tsv'
+    curl -fsS --retry 3 --max-time 15 "$url" | jq -r '.properties.periods[:24][] | [.startTime, .temperature] | @tsv'
 }
 
 draw_chart() {
@@ -82,6 +82,10 @@ draw_chart() {
 main() {
     log "Fetching weather for $LAT,$LON"
     url=$(get_gridpoint_url)
+    if [[ -z "$url" || "$url" == "null" ]]; then
+        log "Failed to get forecast URL from weather service."
+        exit 1
+    fi
     log "Forecast URL: $url"
     fetch_temps "$url" | draw_chart
 }

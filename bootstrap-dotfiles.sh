@@ -65,10 +65,12 @@ install_tools() {
 
 install_conda() {
     if ! command -v conda &>/dev/null; then
+        local tmp_installer
         log "Installing Miniconda..."
-        wget "$CONDA_URL" -O "/tmp/$CONDA_INSTALLER"
-        bash "/tmp/$CONDA_INSTALLER" -b -p "$HOME/miniconda"
-        rm "/tmp/$CONDA_INSTALLER"
+        tmp_installer=$(mktemp "${TMPDIR:-/tmp}/${CONDA_INSTALLER}.XXXXXX")
+        curl -fsSL --retry 3 --connect-timeout 10 "$CONDA_URL" -o "$tmp_installer"
+        bash "$tmp_installer" -b -p "$HOME/miniconda"
+        rm -f "$tmp_installer"
         "$HOME/miniconda/bin/conda" init
     else
         log "Conda already installed."
